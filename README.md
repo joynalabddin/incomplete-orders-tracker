@@ -44,6 +44,10 @@ It is designed for stores that want a small, self-hosted workflow instead of a s
 | WooCommerce HPOS | Declares compatibility with High-Performance Order Storage and uses WooCommerce order APIs. |
 | Controlled updates | Receive a WordPress update notification from a public GitHub Release and approve the update as an administrator. |
 
+## Documentation
+
+Start with the [Wiki Home](https://github.com/joynalabddin/incomplete-orders-tracker/wiki), then follow the [Installation Guide](https://github.com/joynalabddin/incomplete-orders-tracker/wiki/Installation-Guide). The [FAQ and Troubleshooting](https://github.com/joynalabddin/incomplete-orders-tracker/wiki/FAQ-and-Troubleshooting) page covers common store-owner questions, while [Advanced Customization and Hooks](https://github.com/joynalabddin/incomplete-orders-tracker/wiki/Advanced-Customization-and-Hooks) is intended for developers building site-specific integrations.
+
 ## How the workflow works
 
 ```mermaid
