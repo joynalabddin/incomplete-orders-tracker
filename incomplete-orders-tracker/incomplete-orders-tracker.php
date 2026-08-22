@@ -3,7 +3,7 @@
  * Plugin Name: Incomplete Orders Tracker
  * Plugin URI:  https://devjoynal.com
  * Description: Free, activation-free tool to capture and recover incomplete WooCommerce checkouts with reliable Classic and Block Checkout support.
- * Version:     1.0.0
+ * Version:     1.1.0
  * Author:      Joynal Abdin
  * Author URI:  https://devjoynal.com
  * License:     GPLv2 or later
@@ -16,11 +16,17 @@
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
-define( 'IOT_VERSION', '1.0.0' );
-define( 'IOT_DB_VERSION', '1.0.0' );
+define( 'IOT_VERSION', '1.1.0' );
+define( 'IOT_DB_VERSION', '1.1.0' );
 
 define( 'IOT_GITHUB_REPOSITORY', 'joynalabddin/incomplete-orders-tracker' );
 define( 'IOT_GITHUB_RELEASE_ASSET', 'incomplete-orders-tracker.zip' );
+
+add_action( 'before_woocommerce_init', function() {
+    if ( class_exists( '\Automattic\WooCommerce\Utilities\FeaturesUtil' ) ) {
+        \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', __FILE__, true );
+    }
+} );
 
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-iot-github-updater.php';
 IOT_GitHub_Updater::register( __FILE__, IOT_VERSION );
@@ -44,7 +50,10 @@ class IOT_Plugin {
         register_deactivation_hook( __FILE__, array( $this, 'deactivate' ) );
 
         add_action( 'admin_init', array( $this, 'maybe_upgrade' ) );
+        add_action( 'admin_init', array( $this, 'add_privacy_policy_content' ) );
         add_action( 'iot_daily_maintenance', array( $this, 'daily_maintenance' ) );
+        add_filter( 'wp_privacy_personal_data_exporters', array( $this, 'register_privacy_exporter' ) );
+        add_filter( 'wp_privacy_personal_data_erasers', array( $this, 'register_privacy_eraser' ) );
 
         add_action( 'wp_ajax_iot_save', array( $this, 'ajax_save' ) );
         add_action( 'wp_ajax_nopriv_iot_save', array( $this, 'ajax_save' ) );
@@ -153,6 +162,95 @@ public function ajax_delete_entry(){
 
     public function deactivate(){
         wp_clear_scheduled_hook( 'iot_daily_maintenance' );
+    }
+
+
+    public function add_privacy_policy_content(){
+        if ( ! function_exists( 'wp_add_privacy_policy_content' ) ) return;
+
+        $content = '<p>' . esc_html__( 'Incomplete Orders Tracker stores checkout information so the site administrator can follow up on an incomplete WooCommerce order.', 'incomplete-orders-tracker' ) . '</p>';
+        $content .= '<p>' . esc_html__( 'The stored data may include name, email, phone, address, product context, checkout timestamps and the visitor IP address. It is stored in this site’s WordPress database. The plugin does not send checkout data to Joynal Abdin, GitHub or another external service during capture.', 'incomplete-orders-tracker' ) . '</p>';
+        $content .= '<p>' . esc_html__( 'Administrators can configure retention and should publish their own privacy notice. WhatsApp, email and Google Maps open only after an administrator chooses the relevant recovery action.', 'incomplete-orders-tracker' ) . '</p>';
+
+        wp_add_privacy_policy_content( 'Incomplete Orders Tracker', wp_kses_post( $content ) );
+    }
+
+    public function register_privacy_exporter( $exporters ){
+        $exporters['incomplete-orders-tracker'] = array(
+            'exporter_friendly_name' => __( 'Incomplete Orders Tracker', 'incomplete-orders-tracker' ),
+            'callback'               => array( $this, 'privacy_exporter' ),
+        );
+        return $exporters;
+    }
+
+    public function privacy_exporter( $email_address, $page = 1 ){
+        global $wpdb;
+        $email = strtolower( sanitize_email( (string) $email_address ) );
+        $page  = max( 1, absint( $page ) );
+        $limit = 100;
+        $offset = ( $page - 1 ) * $limit;
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT id, email, name, phone, address, product_name, product_link, cart, status, ip, created_at, updated_at FROM {$this->table} WHERE email = %s ORDER BY id ASC LIMIT %d OFFSET %d",
+                $email,
+                $limit,
+                $offset
+            ),
+            ARRAY_A
+        );
+
+        $data = array();
+        foreach ( is_array( $rows ) ? $rows : array() as $row ) {
+            $record_id = isset( $row['id'] ) ? absint( $row['id'] ) : 0;
+            $fields = array(
+                __( 'Name', 'incomplete-orders-tracker' )         => isset( $row['name'] ) ? $row['name'] : '',
+                __( 'Email', 'incomplete-orders-tracker' )        => isset( $row['email'] ) ? $row['email'] : '',
+                __( 'Phone', 'incomplete-orders-tracker' )        => isset( $row['phone'] ) ? $row['phone'] : '',
+                __( 'Address', 'incomplete-orders-tracker' )      => isset( $row['address'] ) ? $row['address'] : '',
+                __( 'Product', 'incomplete-orders-tracker' )      => isset( $row['product_name'] ) ? $row['product_name'] : '',
+                __( 'Product URL', 'incomplete-orders-tracker' )  => isset( $row['product_link'] ) ? $row['product_link'] : '',
+                __( 'Checkout context', 'incomplete-orders-tracker' ) => isset( $row['cart'] ) ? $row['cart'] : '',
+                __( 'Status', 'incomplete-orders-tracker' )       => isset( $row['status'] ) ? $row['status'] : '',
+                __( 'IP address', 'incomplete-orders-tracker' )   => isset( $row['ip'] ) ? $row['ip'] : '',
+                __( 'Created', 'incomplete-orders-tracker' )      => isset( $row['created_at'] ) ? $row['created_at'] : '',
+                __( 'Updated', 'incomplete-orders-tracker' )      => isset( $row['updated_at'] ) ? $row['updated_at'] : '',
+            );
+            foreach ( $fields as $label => $value ) {
+                $data[] = array(
+                    'name'  => sprintf( __( 'Incomplete order #%d — %s', 'incomplete-orders-tracker' ), $record_id, $label ),
+                    'value' => is_scalar( $value ) ? (string) $value : wp_json_encode( $value ),
+                );
+            }
+        }
+
+        return array(
+            'data' => $data,
+            'done' => count( is_array( $rows ) ? $rows : array() ) < $limit,
+        );
+    }
+
+    public function register_privacy_eraser( $erasers ){
+        $erasers['incomplete-orders-tracker'] = array(
+            'eraser_friendly_name' => __( 'Incomplete Orders Tracker', 'incomplete-orders-tracker' ),
+            'callback'             => array( $this, 'privacy_eraser' ),
+        );
+        return $erasers;
+    }
+
+    public function privacy_eraser( $email_address, $page = 1 ){
+        global $wpdb;
+        $email = strtolower( sanitize_email( (string) $email_address ) );
+        $count = absint( $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$this->table} WHERE email = %s", $email ) ) );
+        if ( $count > 0 ) {
+            $wpdb->query( $wpdb->prepare( "DELETE FROM {$this->table} WHERE email = %s", $email ) );
+        }
+
+        return array(
+            'items_removed'  => $count,
+            'items_retained' => 0,
+            'messages'       => array( __( 'Incomplete checkout records matching this email were removed.', 'incomplete-orders-tracker' ) ),
+            'done'           => true,
+        );
     }
 
     public function daily_maintenance(){
@@ -358,6 +456,22 @@ public function ajax_delete_entry(){
         return array_slice($clean, 0, 20);
     }
 
+
+    private function is_allowed_product_url( $url ){
+        $url = trim( (string) $url );
+        if ( '' === $url ) return false;
+        if ( 0 === strpos( $url, '/' ) && 0 !== strpos( $url, '//' ) ) return true;
+
+        $parts = wp_parse_url( $url );
+        $home  = wp_parse_url( home_url( '/' ) );
+        if ( ! is_array( $parts ) || ! is_array( $home ) || empty( $parts['host'] ) || empty( $home['host'] ) ) return false;
+        if ( ! empty( $parts['scheme'] ) && ! in_array( strtolower( $parts['scheme'] ), array( 'http', 'https' ), true ) ) return false;
+
+        $host = strtolower( preg_replace( '/^www\\./', '', (string) $parts['host'] ) );
+        $home_host = strtolower( preg_replace( '/^www\\./', '', (string) $home['host'] ) );
+        return $host === $home_host;
+    }
+
     private function sanitize_product_links( $links ){
         if ( ! is_array($links) ) return array();
 
@@ -370,7 +484,7 @@ public function ajax_delete_entry(){
             if ( strpos($link, '#') === 0 ) continue;
 
             $link = esc_url_raw($link);
-            if ( $link === '' ) continue;
+            if ( $link === '' || ! $this->is_allowed_product_url( $link ) ) continue;
             if ( in_array($link, $clean, true) ) continue;
 
             $clean[] = $link;
@@ -712,37 +826,39 @@ public function ajax_delete_entry(){
 
     public function hook_order_processed( $order_id, $posted_data, $order ){
         if ( ! $order_id ) return;
-        $this->mark_as_complete_by_order($order);
+        $this->update_matching_record_for_order($order, 'order_created');
     }
 
     public function hook_order_processed_block( $order ){
         if ( is_object($order) || is_numeric($order) ) {
-            $this->mark_as_complete_by_order($order);
+            $this->update_matching_record_for_order($order, 'order_created');
         }
     }
 
     public function hook_order_payment_complete( $order_id ){
         if ( ! $order_id ) return;
-        $this->mark_as_complete_by_order( $order_id );
+        $this->update_matching_record_for_order( $order_id, 'converted' );
     }
 
     public function hook_order_status_processing( $order_id, $order = null ){
         if ( $order ) {
-            $this->mark_as_complete_by_order( $order );
+            $this->update_matching_record_for_order( $order, 'converted' );
             return;
         }
-        if ( $order_id ) $this->mark_as_complete_by_order( $order_id );
+        if ( $order_id ) $this->update_matching_record_for_order( $order_id, 'converted' );
     }
 
     public function hook_order_status_completed( $order_id, $order = null ){
         if ( $order ) {
-            $this->mark_as_complete_by_order( $order );
+            $this->update_matching_record_for_order( $order, 'converted' );
             return;
         }
-        if ( $order_id ) $this->mark_as_complete_by_order( $order_id );
+        if ( $order_id ) $this->update_matching_record_for_order( $order_id, 'converted' );
     }
 
-    private function mark_as_complete_by_order($order) {
+    private function update_matching_record_for_order( $order, $new_status ) {
+        $new_status = in_array( $new_status, array( 'order_created', 'converted' ), true ) ? $new_status : '';
+        if ( '' === $new_status ) return;
         if ( is_numeric($order) ) $order = wc_get_order($order);
         if ( ! $order || ! is_object($order) || ! method_exists($order, 'get_id') ) return;
 
@@ -755,7 +871,7 @@ public function ajax_delete_entry(){
         if ( '' !== $session ) {
             $matched_id = absint( $wpdb->get_var(
                 $wpdb->prepare(
-                    "SELECT id FROM {$this->table} WHERE status = 'incomplete' AND session_key = %s ORDER BY updated_at DESC, id DESC LIMIT 1",
+                    "SELECT id FROM {$this->table} WHERE status IN ('incomplete','order_created') AND session_key = %s ORDER BY updated_at DESC, id DESC LIMIT 1",
                     $session
                 )
             ) );
@@ -793,7 +909,7 @@ public function ajax_delete_entry(){
                 $days     = max(1, min(90, absint($settings['match_window_days'])));
                 $cutoff   = gmdate('Y-m-d H:i:s', time() - ($days * DAY_IN_SECONDS));
                 $sql = "SELECT id FROM {$this->table}
-                        WHERE status = 'incomplete' AND updated_at >= %s AND (" . implode(' OR ', $conditions) . ")
+                        WHERE status IN ('incomplete','order_created') AND updated_at >= %s AND (" . implode(' OR ', $conditions) . ")
                         ORDER BY updated_at DESC, id DESC LIMIT 1";
                 $query_params = array_merge( array( $cutoff ), $params );
                 $matched_id = absint( $wpdb->get_var( $wpdb->prepare( $sql, $query_params ) ) );
@@ -804,7 +920,7 @@ public function ajax_delete_entry(){
             $wpdb->update(
                 $this->table,
                 array(
-                    'status' => 'complete',
+                    'status' => $new_status,
                     'order_id' => $order_id,
                     'updated_at' => current_time('mysql', true),
                 ),
@@ -814,7 +930,9 @@ public function ajax_delete_entry(){
             );
         }
 
-        $this->clear_tracking_cookie();
+        if ( 'converted' === $new_status ) {
+            $this->clear_tracking_cookie();
+        }
     }
 
     private function clear_tracking_cookie(){
@@ -853,14 +971,33 @@ public function ajax_delete_entry(){
         if ( ! current_user_can('manage_options') ) return;
         global $wpdb;
         // Show incomplete leads + admin-manually completed leads.
-        // Hide auto-completed WooCommerce orders (they have order_id > 0).
+        // Hide WooCommerce orders that already have an order ID.
+        $search = isset( $_GET['iot_search'] ) && is_scalar( $_GET['iot_search'] ) ? sanitize_text_field( wp_unslash( $_GET['iot_search'] ) ) : '';
+        $status_filter = isset( $_GET['iot_status'] ) && is_scalar( $_GET['iot_status'] ) ? sanitize_key( wp_unslash( $_GET['iot_status'] ) ) : 'all';
+        if ( ! in_array( $status_filter, array( 'all', 'incomplete', 'order_created', 'complete' ), true ) ) $status_filter = 'all';
+        $page_number = isset( $_GET['iot_page'] ) && is_scalar( $_GET['iot_page'] ) ? max( 1, absint( $_GET['iot_page'] ) ) : 1;
+        $per_page = 50;
+        $where = array( "(status IN ('incomplete','order_created') OR (status = 'complete' AND (order_id = 0 OR order_id IS NULL)))" );
+        $query_params = array();
+        if ( 'all' !== $status_filter ) {
+            $where[] = 'status = %s';
+            $query_params[] = $status_filter;
+        }
+        if ( '' !== $search ) {
+            $like = '%' . $wpdb->esc_like( $search ) . '%';
+            $where[] = '(name LIKE %s OR email LIKE %s OR phone LIKE %s OR product_name LIKE %s)';
+            $query_params = array_merge( $query_params, array( $like, $like, $like, $like ) );
+        }
+        $base_sql = " FROM {$this->table} WHERE " . implode( ' AND ', $where );
+        $total_rows = absint( $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*)' . $base_sql, $query_params ) ) );
+        $offset = ( $page_number - 1 ) * $per_page;
         $rows = $wpdb->get_results(
-            "SELECT * FROM {$this->table}
-             WHERE (status = 'incomplete' AND (order_id = 0 OR order_id IS NULL))
-                OR (status = 'complete' AND (order_id = 0 OR order_id IS NULL))
-             ORDER BY created_at DESC
-             LIMIT 500"
+            $wpdb->prepare(
+                'SELECT *' . $base_sql . ' ORDER BY created_at DESC, id DESC LIMIT %d OFFSET %d',
+                array_merge( $query_params, array( $per_page, $offset ) )
+            )
         );
+        $total_pages = max( 1, (int) ceil( $total_rows / $per_page ) );
         $incomplete_count = intval($wpdb->get_var("SELECT COUNT(*) FROM {$this->table} WHERE status='incomplete' AND (order_id = 0 OR order_id IS NULL)"));
         $completed_count = intval($wpdb->get_var("SELECT COUNT(*) FROM {$this->table} WHERE status='complete' AND (order_id = 0 OR order_id IS NULL)"));
         ?>
@@ -884,6 +1021,13 @@ public function ajax_delete_entry(){
             </header>
 
             <div class="iot-table-wrap">
+                <form class="iot-filters" method="get" action="">
+                    <input type="hidden" name="page" value="iot-incomplete-orders" />
+                    <label><span class="screen-reader-text">Search incomplete orders</span><input type="search" name="iot_search" value="<?php echo esc_attr( $search ); ?>" placeholder="Search name, email, phone or product" /></label>
+                    <label><span class="screen-reader-text">Filter status</span><select name="iot_status"><option value="all" <?php selected( $status_filter, 'all' ); ?>>All visible</option><option value="incomplete" <?php selected( $status_filter, 'incomplete' ); ?>>Incomplete</option><option value="order_created" <?php selected( $status_filter, 'order_created' ); ?>>Order created</option><option value="complete" <?php selected( $status_filter, 'complete' ); ?>>Manually completed</option></select></label>
+                    <button type="submit" class="iot-btn iot-btn-primary">Filter</button>
+                    <?php if ( '' !== $search || 'all' !== $status_filter ): ?><a class="iot-btn" href="<?php echo esc_url( admin_url( 'admin.php?page=iot-incomplete-orders' ) ); ?>">Reset</a><?php endif; ?>
+                </form>
                 <table class="iot-table">
                     <thead>
                         <tr><th>#</th><th>Customer</th><th>Contact</th><th>Address</th><th>Product</th><th>Status</th><th>Actions</th><th>Time</th></tr>
@@ -979,11 +1123,13 @@ public function ajax_delete_entry(){
 
 
                             <td data-label="Status">
-                                <?php if($row_status === 'incomplete'): ?>
-                                    <span class="iot-badge-status iot-incomplete">Incomplete</span>
-                                <?php else: ?>
-                                    <span class="iot-badge-status iot-complete">Completed</span>
-                                <?php endif; ?>
+                                    <?php if ( 'incomplete' === $row_status ): ?>
+                                        <span class="iot-badge-status iot-incomplete">Incomplete</span>
+                                    <?php elseif ( 'order_created' === $row_status ): ?>
+                                        <span class="iot-badge-status iot-order-created">Order Created</span>
+                                    <?php else: ?>
+                                        <span class="iot-badge-status iot-complete">Completed</span>
+                                    <?php endif; ?>
                             </td>
 
                             <td class="iot-actions-td" data-label="Actions">
@@ -1054,6 +1200,22 @@ public function ajax_delete_entry(){
                         <?php endif; ?>
                     </tbody>
                 </table>
+                <?php if ( $total_pages > 1 ): ?>
+                    <nav class="iot-pagination" aria-label="Incomplete order pages">
+                        <?php
+                        echo wp_kses_post( paginate_links( array(
+                            'base'      => add_query_arg( 'iot_page', '%#%', admin_url( 'admin.php' ) ),
+                            'format'    => '',
+                            'current'   => $page_number,
+                            'total'     => $total_pages,
+                            'prev_text' => '&laquo; Previous',
+                            'next_text' => 'Next &raquo;',
+                            'add_args'  => array_filter( array( 'page' => 'iot-incomplete-orders', 'iot_search' => $search, 'iot_status' => 'all' !== $status_filter ? $status_filter : '' ) ),
+                            'type'      => 'plain',
+                        ) ) );
+                        ?>
+                    </nav>
+                <?php endif; ?>
                  <div class="iot-author-card">
                     <img class="iot-author-avatar" src="<?php echo esc_url(plugin_dir_url(__FILE__) . 'assets/joynal-abdin-author.jpg'); ?>" alt="Joynal Abdin" loading="lazy" />
                     <div class="iot-author-copy">

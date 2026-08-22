@@ -19,6 +19,8 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Read plugin version
         id: version
@@ -29,6 +31,14 @@ jobs:
           if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "Invalid plugin version: $version" >&2
             exit 1
+          fi
+          latest_tag=$(git tag --list 'v*' --sort=-v:refname | head -n 1 || true)
+          if [[ -n "$latest_tag" ]]; then
+            latest_version="${latest_tag#v}"
+            if [[ "$version" == "$latest_version" ]] || [[ "$(printf '%s\\n%s\\n' "$latest_version" "$version" | sort -V | tail -n 1)" != "$version" ]]; then
+              echo "Version $version must be newer than existing tag $latest_tag." >&2
+              exit 1
+            fi
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "tag=v$version" >> "$GITHUB_OUTPUT"
@@ -67,7 +77,8 @@ jobs:
         run: |
           set -euo pipefail
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" incomplete-orders-tracker.zip incomplete-orders-tracker.zip.sha256 --clobber
+            echo "Release $TAG already exists; refusing to overwrite an existing release." >&2
+            exit 1
           else
             gh release create "$TAG" incomplete-orders-tracker.zip incomplete-orders-tracker.zip.sha256 \
               --title "Incomplete Orders Tracker $TAG" \

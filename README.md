@@ -37,6 +37,10 @@ The plugin is designed for WooCommerce stores that want a simple, self-hosted re
 | CSV export | Exports records for administrator review with permission, nonce and spreadsheet-formula protection. |
 | Privacy controls | Includes input limits, request throttling and configurable data retention cleanup. |
 | Update notifications | Checks public GitHub Releases and shows WordPress update notifications for administrator approval. |
+| Conversion lifecycle | Separates order-created records from paid/converted records to reduce false completion states. |
+| HPOS compatibility | Declares WooCommerce High-Performance Order Storage compatibility and uses WooCommerce order APIs. |
+| Privacy lifecycle | Registers WordPress personal-data exporter and eraser callbacks and adds privacy-policy guidance. |
+| Admin scale | Provides server-side search, status filtering and pagination for visible records. |
 
 ## How the free WooCommerce checkout tracker works
 
@@ -56,7 +60,7 @@ If the same checkout session already has an incomplete record, that row is updat
 
 ### 4. An order is created or paid
 
-The plugin attaches the checkout session identifier to the WooCommerce order. When the order is processed, paid, moved to processing, completed, or created through Block Checkout, the plugin marks the newest matching incomplete record as `complete` and stores the WooCommerce order ID.
+The plugin attaches the checkout session identifier to the WooCommerce order. When the order is created, the newest matching record becomes `order_created` and stores the WooCommerce order ID. When payment completes or the order reaches an accepted processing/completed status, that record becomes `converted`. This avoids treating an unpaid order as a completed recovery lead.
 
 ### 5. The administrator follows up
 
@@ -89,7 +93,7 @@ For a release to be recognized, the release must include the asset named exactly
 incomplete-orders-tracker.zip
 ```
 
-The release tag should use a semantic version such as `v1.0.0`, `v1.1.0` or `v1.0.1`. The ZIP must contain one top-level folder named `incomplete-orders-tracker` and the main plugin file at:
+The release tag should use a semantic version such as `v1.0.0`, `v1.1.0` or `v1.1.1`. The release workflow refuses to overwrite an existing tag or publish a version that is not newer than the latest release. The ZIP must contain one top-level folder named `incomplete-orders-tracker` and the main plugin file at:
 
 ```text
 incomplete-orders-tracker/incomplete-orders-tracker.php
@@ -112,11 +116,15 @@ Available placeholders include `{{customer_name}}`, `{{product_name}}`, `{{site_
 
 ## Privacy and data handling
 
-The plugin stores checkout contact information, address data, product context, timestamps and the visitor IP address in the site's WordPress database. The data is collected so the store administrator can recover an incomplete order. Administrators should update their privacy policy, define a lawful retention period and inform customers about the collection of checkout data.
+The plugin stores checkout contact information, address data, product context, timestamps and the visitor IP address in the site's WordPress database. The data is collected so the store administrator can recover an incomplete order. Version 1.1.0 also registers WordPress personal-data exporter and eraser callbacks. Administrators should update their privacy policy, define a lawful retention period and inform customers about the collection of checkout data.
 
 Recovery buttons can open WhatsApp, the administrator's email client or Google Maps in the administrator's browser. These external services are opened only after the administrator chooses the relevant action.
 
 The plugin has no remote license service, no paid activation, no customer account connection and no hidden license check. GitHub is used only for public version update metadata and release downloads.
+
+## Version 1.1.0 improvements
+
+The 1.1.0 release adds WooCommerce HPOS compatibility declaration, a safer order-created versus converted lifecycle, same-site product URL validation, WordPress privacy exporter/eraser callbacks, dashboard search/status filters/pagination, stale CSS metadata cleanup and a stricter GitHub release version guard.
 
 ## Requirements
 
