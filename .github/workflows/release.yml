@@ -35,7 +35,7 @@ jobs:
           latest_tag=$(git tag --list 'v*' --sort=-v:refname | head -n 1 || true)
           if [[ -n "$latest_tag" ]]; then
             latest_version="${latest_tag#v}"
-            if [[ "$version" == "$latest_version" ]] || [[ "$(printf '%s\\n%s\\n' "$latest_version" "$version" | sort -V | tail -n 1)" != "$version" ]]; then
+            if [[ "$version" == "$latest_version" ]] || [[ "$(printf '%s\n%s\n' "$latest_version" "$version" | sort -V | tail -n 1)" != "$version" ]]; then
               echo "Version $version must be newer than existing tag $latest_tag." >&2
               exit 1
             fi
