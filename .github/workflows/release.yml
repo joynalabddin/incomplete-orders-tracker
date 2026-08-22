@@ -40,7 +40,7 @@ jobs:
           php -l incomplete-orders-tracker/incomplete-orders-tracker.php
           node --check incomplete-orders-tracker/iot-checkout.js
           node --check incomplete-orders-tracker/assets/iot-admin.js
-          if grep -RniE 'borbila|IOT_BORBILA|IOT_License|iot_borbila|wp_remote_|activate_license|license_page|iot_license|MASTER_|API_BASE_URL' incomplete-orders-tracker --include='*.php' --include='*.js' --include='*.css'; then
+          if grep -RniE 'borbila|IOT_BORBILA|IOT_License|iot_borbila|activate_license|license_page|iot_license|MASTER_|API_BASE_URL|license server|remote activation' incomplete-orders-tracker --include='*.php' --include='*.js' --include='*.css'; then
             echo 'Old vendor or remote license code detected.' >&2
             exit 1
           fi
