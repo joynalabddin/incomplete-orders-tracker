@@ -1,4 +1,4 @@
-# Incomplete Orders Tracker
+# Free WooCommerce Incomplete Orders Tracker
 
 <p align="center">
   <img src="incomplete-orders-tracker/assets/joynal-abdin-author.jpg" alt="Joynal Abdin" width="180" />
@@ -11,18 +11,18 @@
 </p>
 
 <p align="center">
-  <a href="https://devjoynal.com">Visit devjoynal.com</a> ·
-  <a href="https://github.com/joynalabddin/incomplete-orders-tracker/releases">Releases</a> ·
+  <a href="https://devjoynal.com/incomplete-orders-tracker.html">Plugin website</a> ·
+  <a href="https://github.com/joynalabddin/incomplete-orders-tracker/releases">Download free plugin</a> ·
   <a href="https://github.com/joynalabddin/incomplete-orders-tracker/issues">Support & Issues</a>
 </p>
 
 ## About the plugin
 
-**Incomplete Orders Tracker** is a free WordPress and WooCommerce plugin by **Joynal Abdin** at [devjoynal.com](https://devjoynal.com). It records useful checkout context when a customer starts entering information but leaves before completing an order. Store administrators can then review the lead, see product context, and follow up through WhatsApp or email.
+**Incomplete Orders Tracker** is a free WordPress and WooCommerce plugin by **Joynal Abdin** at [devjoynal.com](https://devjoynal.com). It works as a WooCommerce incomplete checkout tracker and abandoned order recovery tool: when a customer starts entering checkout information but leaves before completing an order, the store administrator can review the lead, see product context, and follow up through WhatsApp or email.
 
 The plugin is designed for WooCommerce stores that want a simple, self-hosted recovery workflow without a paid service, license key, activation key, account connection, or external dashboard. Data is stored in the site's own WordPress database.
 
-## What it does
+## WooCommerce abandoned checkout recovery features
 
 | Capability | Details |
 |---|---|
@@ -38,7 +38,7 @@ The plugin is designed for WooCommerce stores that want a simple, self-hosted re
 | Privacy controls | Includes input limits, request throttling and configurable data retention cleanup. |
 | Update notifications | Checks public GitHub Releases and shows WordPress update notifications for administrator approval. |
 
-## How the plugin works
+## How the free WooCommerce checkout tracker works
 
 ### 1. A customer visits checkout
 
@@ -66,7 +66,7 @@ The dashboard shows incomplete and manually completed records. The administrator
 
 A daily WordPress maintenance event removes records older than the configured retention period. The default retention is 90 days and can be changed from **Incomplete Orders → Settings** between 30 and 3,650 days.
 
-## Installation
+## Installation: free WordPress plugin for WooCommerce
 
 1. Download the latest `incomplete-orders-tracker.zip` file from the [Releases page](https://github.com/joynalabddin/incomplete-orders-tracker/releases).
 2. In WordPress, open **Plugins → Add New → Upload Plugin**.
@@ -140,9 +140,9 @@ git push origin main --tags
 
 Then create a GitHub Release for the tag and upload `incomplete-orders-tracker.zip` as the release asset. The repository is public so installed sites can retrieve release metadata without distributing a GitHub token.
 
-## Support and website
+## WordPress support, development and website
 
-For WordPress development, security recovery, migration, performance and related services, visit **[devjoynal.com](https://devjoynal.com)**. Bugs and feature suggestions can be submitted through the repository's [Issues](https://github.com/joynalabddin/incomplete-orders-tracker/issues) page.
+For WordPress development, security recovery, migration, performance and related services, visit **[devjoynal.com](https://devjoynal.com)**. Read the dedicated [WooCommerce incomplete orders tracker page](https://devjoynal.com/incomplete-orders-tracker.html) for a user-friendly overview and download path. Bugs and feature suggestions can be submitted through the repository's [Issues](https://github.com/joynalabddin/incomplete-orders-tracker/issues) page.
 
 ## License
 
