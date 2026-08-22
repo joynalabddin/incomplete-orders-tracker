@@ -1,160 +1,156 @@
-# Free WooCommerce Incomplete Orders Tracker
+# Incomplete Orders Tracker
 
 <p align="center">
-  <img src="incomplete-orders-tracker/assets/joynal-abdin-author.jpg" alt="Joynal Abdin" width="180" />
-</p>
-
-<h2 align="center">Free WooCommerce Incomplete Checkout Recovery</h2>
-
-<p align="center">
-  Capture incomplete checkout details, understand what customers intended to buy, and follow up from one clean WordPress dashboard.
+  <img src="incomplete-orders-tracker/assets/joynal-abdin-author.jpg" alt="Joynal Abdin — DevJoynal" width="128" />
 </p>
 
 <p align="center">
-  <a href="https://devjoynal.com/incomplete-orders-tracker.html">Plugin website</a> ·
-  <a href="https://github.com/joynalabddin/incomplete-orders-tracker/releases">Download free plugin</a> ·
-  <a href="https://github.com/joynalabddin/incomplete-orders-tracker/issues">Support & Issues</a>
+  <strong>A free, self-hosted WooCommerce checkout recovery plugin for WordPress.</strong><br />
+  Capture incomplete checkout details locally, review product intent, and follow up from one focused admin dashboard.
 </p>
 
-## About the plugin
+<p align="center">
+  <a href="https://github.com/joynalabddin/incomplete-orders-tracker/releases/latest"><img src="https://img.shields.io/github/v/release/joynalabddin/incomplete-orders-tracker?label=latest%20release" alt="Latest release" /></a>
+  <a href="https://github.com/joynalabddin/incomplete-orders-tracker/actions/workflows/release.yml"><img src="https://img.shields.io/github/actions/workflow/status/joynalabddin/incomplete-orders-tracker/release.yml?branch=main&label=release%20build" alt="Release build status" /></a>
+  <a href="https://github.com/joynalabddin/incomplete-orders-tracker/blob/main/LICENSE"><img src="https://img.shields.io/github/license/joynalabddin/incomplete-orders-tracker" alt="GPL license" /></a>
+  <a href="https://wordpress.org/"><img src="https://img.shields.io/badge/WordPress-6.2%2B-21759B" alt="WordPress 6.2 or newer" /></a>
+  <a href="https://woocommerce.com/"><img src="https://img.shields.io/badge/WooCommerce-supported-96588A" alt="WooCommerce supported" /></a>
+</p>
 
-**Incomplete Orders Tracker** is a free WordPress and WooCommerce plugin by **Joynal Abdin** at [devjoynal.com](https://devjoynal.com). It works as a WooCommerce incomplete checkout tracker and abandoned order recovery tool: when a customer starts entering checkout information but leaves before completing an order, the store administrator can review the lead, see product context, and follow up through WhatsApp or email.
+<p align="center">
+  <a href="https://github.com/joynalabddin/incomplete-orders-tracker/releases/latest">Download the plugin</a> ·
+  <a href="https://devjoynal.com/">Visit DevJoynal</a> ·
+  <a href="https://github.com/joynalabddin/incomplete-orders-tracker/issues">Ask for help</a>
+</p>
 
-The plugin is designed for WooCommerce stores that want a simple, self-hosted recovery workflow without a paid service, license key, activation key, account connection, or external dashboard. Data is stored in the site's own WordPress database.
+## Overview
 
-## WooCommerce abandoned checkout recovery features
+**Incomplete Orders Tracker** helps WooCommerce store owners recover checkout sessions that did not become orders. When a visitor starts entering checkout information and leaves, the plugin saves the available checkout context in the store’s own WordPress database. Administrators can then review the record, see the intended product, and choose a WhatsApp or email follow-up.
 
-| Capability | Details |
-|---|---|
-| Incomplete checkout capture | Saves customer name, email, phone, address and product context while checkout is in progress. |
-| Checkout compatibility | Supports WooCommerce Classic Checkout and WooCommerce Block Checkout. |
-| Session-first matching | Uses a checkout session and order metadata to connect a completed order to the correct incomplete record. |
-| Safe fallback matching | If session data is unavailable, the newest eligible match can be found using email or phone within the configured time window. |
-| Product context | Captures product names and links, with a WooCommerce cart fallback when checkout selectors are unavailable. |
-| WhatsApp recovery | Opens a pre-filled WhatsApp message using the administrator's editable template and country code. |
-| Email recovery | Opens a pre-filled email with editable subject and message placeholders. |
-| Admin actions | Mark a record completed, delete a record, open product links, call a phone number, or open an address in Google Maps. |
-| CSV export | Exports records for administrator review with permission, nonce and spreadsheet-formula protection. |
-| Privacy controls | Includes input limits, request throttling and configurable data retention cleanup. |
-| Update notifications | Checks public GitHub Releases and shows WordPress update notifications for administrator approval. |
-| Conversion lifecycle | Separates order-created records from paid/converted records to reduce false completion states. |
-| HPOS compatibility | Declares WooCommerce High-Performance Order Storage compatibility and uses WooCommerce order APIs. |
-| Privacy lifecycle | Registers WordPress personal-data exporter and eraser callbacks and adds privacy-policy guidance. |
-| Admin scale | Provides server-side search, status filtering and pagination for visible records. |
+It is designed for stores that want a small, self-hosted workflow instead of a separate SaaS dashboard. The plugin is free for everyone, does not require a license key or account, and has no paid activation system.
 
-## How the free WooCommerce checkout tracker works
+## What it provides
 
-### 1. A customer visits checkout
+| Capability | What store owners can do |
+| --- | --- |
+| Checkout capture | Save available name, email, phone, address and product context while checkout is in progress. |
+| Classic and Block Checkout | Use the same recovery workflow with the two main WooCommerce checkout experiences. |
+| Reliable matching | Link a later WooCommerce order to the correct checkout session, with a limited email/phone fallback. |
+| Recovery actions | Open a pre-filled WhatsApp message or email from the administrator dashboard. |
+| Product context | Review product names and safe, same-store product links. |
+| Operations dashboard | Search records, filter by state, paginate results, call a phone number, open a map, or remove a record. |
+| CSV export | Export records for internal review with permission checks, nonce validation and spreadsheet-formula protection. |
+| Privacy lifecycle | Configure retention and use WordPress personal-data export/erase tools for stored checkout records. |
+| WooCommerce HPOS | Declares compatibility with High-Performance Order Storage and uses WooCommerce order APIs. |
+| Controlled updates | Receive a WordPress update notification from a public GitHub Release and approve the update as an administrator. |
 
-The frontend script loads only on WooCommerce checkout pages. It creates a random checkout session identifier and keeps it in browser storage and a cookie. The identifier does not contain the customer's name, email or phone number.
+## How the workflow works
 
-### 2. Checkout information changes
+```mermaid
+flowchart LR
+    A[Visitor starts checkout] --> B[Checkout context is captured locally]
+    B --> C{Order created?}
+    C -->|No| D[Record remains incomplete]
+    C -->|Yes| E[Record becomes order_created]
+    E --> F{Payment or accepted status?}
+    F -->|No| G[Keep order_created for review]
+    F -->|Yes| H[Record becomes converted]
+    D --> I[Admin reviews and follows up]
+```
 
-After a short configurable delay, the plugin reads available billing fields and product information from the checkout. It sanitizes the values, removes unsafe product links and ignores placeholder labels such as `Subtotal`, `Shipping` and `Checkout`.
+The browser receives a random session identifier that does not contain the visitor’s personal details. The plugin sends checkout data to the site’s own WordPress AJAX endpoint, not to DevJoynal or GitHub. An order-created event is kept separate from a paid/converted event so a pending order is not treated as a successful recovery.
 
-The information is sent to the site's own WordPress AJAX endpoint. Requests require a WordPress nonce, are limited in size and are throttled per IP address. The plugin does not send checkout information to Joynal Abdin, GitHub, WhatsApp or any other external service during capture.
+## Install
 
-### 3. A record is updated instead of duplicated
-
-If the same checkout session already has an incomplete record, that row is updated. Otherwise, a new record is inserted into the site's `{prefix}iot_incomplete_orders` table with status `incomplete`.
-
-### 4. An order is created or paid
-
-The plugin attaches the checkout session identifier to the WooCommerce order. When the order is created, the newest matching record becomes `order_created` and stores the WooCommerce order ID. When payment completes or the order reaches an accepted processing/completed status, that record becomes `converted`. This avoids treating an unpaid order as a completed recovery lead.
-
-### 5. The administrator follows up
-
-The dashboard shows incomplete and manually completed records. The administrator can use the WhatsApp and email buttons, open the product, call the customer, view the address on Google Maps, manually mark the record completed, delete the record, or export a CSV.
-
-### 6. Old records are cleaned up
-
-A daily WordPress maintenance event removes records older than the configured retention period. The default retention is 90 days and can be changed from **Incomplete Orders → Settings** between 30 and 3,650 days.
-
-## Installation: free WordPress plugin for WooCommerce
-
-1. Download the latest `incomplete-orders-tracker.zip` file from the [Releases page](https://github.com/joynalabddin/incomplete-orders-tracker/releases).
+1. Download `incomplete-orders-tracker.zip` from the [latest GitHub Release](https://github.com/joynalabddin/incomplete-orders-tracker/releases/latest).
 2. In WordPress, open **Plugins → Add New → Upload Plugin**.
-3. Upload the ZIP file and click **Install Now**.
-4. Activate **Incomplete Orders Tracker**.
-5. Confirm that WooCommerce is active, then open **Incomplete Orders** from the WordPress admin menu.
-6. Review the settings, message templates, country code and retention period.
+3. Upload the ZIP, select **Install Now**, and activate **Incomplete Orders Tracker**.
+4. Confirm that WooCommerce is active.
+5. Open **Incomplete Orders** in the WordPress admin menu and review the settings.
 
-No license key or paid activation is needed. WordPress's normal plugin activation step is only used to create or repair the local database table and schedule maintenance.
+The normal WordPress **Activate** button only loads the plugin and prepares its local table/scheduled maintenance. There is no license validation, activation key, paid plan, external account or hidden activation service.
 
-## Update process
+## First-time configuration
 
-Updates are distributed through versioned GitHub Releases. When a new release is published, an installed plugin checks the public repository during WordPress's normal plugin update check. If a newer version exists, WordPress displays an update notification on the Plugins or Updates screen. The administrator reviews and approves the update.
+Open **Incomplete Orders → Settings** after installation. Set the store name and URL used in recovery messages, choose a WhatsApp country code, review the capture delay, choose a matching window, and set the retention period. The default retention period is 90 days and can be adjusted between 30 and 3,650 days.
 
-This is intentionally a **notification-and-approval** workflow. The plugin does not silently replace itself. WordPress may cache update checks, so a new release may not appear at the exact second it is published; an administrator can use the normal WordPress update check to refresh it.
-
-For a release to be recognized, the release must include the asset named exactly:
+The WhatsApp and email templates support these placeholders:
 
 ```text
-incomplete-orders-tracker.zip
+{{customer_name}}
+{{product_name}}
+{{site_name}}
+{{site_url}}
+{{order_date}}
 ```
 
-The release tag should use a semantic version such as `v1.0.0`, `v1.1.0` or `v1.1.1`. The release workflow refuses to overwrite an existing tag or publish a version that is not newer than the latest release. The ZIP must contain one top-level folder named `incomplete-orders-tracker` and the main plugin file at:
+## Status model
 
-```text
-incomplete-orders-tracker/incomplete-orders-tracker.php
-```
-
-## Settings
-
-| Setting | Purpose |
-|---|---|
-| Site Name | The store name used in WhatsApp and email templates. |
-| Site URL | The store URL used in message templates. |
-| WhatsApp Country Code | Default country prefix, such as `880` for Bangladesh. |
-| Capture Delay | How long the plugin waits after a checkout field change before saving. |
-| Completion Match Window | How many recent days are eligible for email/phone fallback matching. |
-| Data Retention | How long incomplete and manually completed records remain before cleanup. |
-| WhatsApp Template | Editable recovery message with placeholders. |
-| Email Subject and Body | Editable email recovery content with placeholders. |
-
-Available placeholders include `{{customer_name}}`, `{{product_name}}`, `{{site_name}}`, `{{site_url}}` and `{{order_date}}`.
+| Status | Meaning |
+| --- | --- |
+| `incomplete` | Checkout information was captured, but no matching WooCommerce order has been created. |
+| `order_created` | A WooCommerce order was created and linked, but payment/conversion is not yet confirmed. |
+| `converted` | Payment completed or the order reached an accepted processing/completed state. |
+| `complete` | An administrator manually closed the visible recovery record. |
 
 ## Privacy and data handling
 
-The plugin stores checkout contact information, address data, product context, timestamps and the visitor IP address in the site's WordPress database. The data is collected so the store administrator can recover an incomplete order. Version 1.1.0 also registers WordPress personal-data exporter and eraser callbacks. Administrators should update their privacy policy, define a lawful retention period and inform customers about the collection of checkout data.
+The plugin stores checkout contact fields, address data, product context, timestamps and the visitor IP address in the site’s own WordPress database. The information is collected so the store administrator can follow up on an incomplete checkout. The site owner should publish an appropriate privacy notice, select a retention period, and explain the recovery workflow to visitors.
 
-Recovery buttons can open WhatsApp, the administrator's email client or Google Maps in the administrator's browser. These external services are opened only after the administrator chooses the relevant action.
+WordPress administrators can use the built-in personal-data export and erase tools for matching checkout records. Recovery buttons open WhatsApp, the administrator’s email client or Google Maps only after the administrator chooses the relevant action. The plugin does not transmit captured checkout data to Joynal Abdin, DevJoynal, GitHub or an external dashboard.
 
-The plugin has no remote license service, no paid activation, no customer account connection and no hidden license check. GitHub is used only for public version update metadata and release downloads.
+## Updates
 
-## Version 1.1.0 improvements
+Updates are distributed through public, versioned GitHub Releases. When a newer release is available, WordPress shows an update notification on the Plugins or Updates screen. The administrator reviews and approves the update; the plugin does not silently replace itself.
 
-The 1.1.0 release adds WooCommerce HPOS compatibility declaration, a safer order-created versus converted lifecycle, same-site product URL validation, WordPress privacy exporter/eraser callbacks, dashboard search/status filters/pagination, stale CSS metadata cleanup and a stricter GitHub release version guard.
+For each release, the repository workflow creates an asset named exactly `incomplete-orders-tracker.zip`. A release version must be newer than the previous semantic version tag, for example `v1.1.0` followed by `v1.1.1`. WordPress may cache update checks, so a notification can appear after the release rather than at the exact publication second.
 
-## Requirements
+## Requirements and compatibility
 
-- WordPress 6.2 or newer.
-- PHP 7.4 or newer.
-- WooCommerce active.
-- HTTPS is strongly recommended for the store checkout.
+| Requirement | Supported baseline |
+| --- | --- |
+| WordPress | 6.2 or newer |
+| PHP | 7.4 or newer |
+| WooCommerce | Active installation required |
+| Checkout | Classic Checkout and WooCommerce Block Checkout |
+| Storage | WordPress database with WooCommerce HPOS compatibility declaration |
+| Security | HTTPS is strongly recommended for checkout |
 
-## Development and release
+Before production rollout, test the plugin on a staging site with the store’s payment gateway, Classic Checkout, Block Checkout, HPOS enabled/disabled, pending orders, failed payments and successful payments.
 
-The plugin source is in the [`incomplete-orders-tracker/`](incomplete-orders-tracker/) directory. Before creating a release, run PHP syntax checks, JavaScript syntax checks and a staging-site test covering Classic Checkout, Block Checkout, order completion, admin actions, CSV export and migration from an older installation.
+## Common questions
 
-To publish a release from a local clone:
+### Does the plugin require a license key?
 
-```bash
-git add .
-git commit -m "Release 1.0.0"
-git tag v1.0.0
-git push origin main --tags
-```
+No. It is free for everyone and has no license key, activation key, paid plan or remote license server. WordPress’s normal plugin activation is still required to load the plugin, as with every WordPress plugin.
 
-Then create a GitHub Release for the tag and upload `incomplete-orders-tracker.zip` as the release asset. The repository is public so installed sites can retrieve release metadata without distributing a GitHub token.
+### Does it send customer data to an external service?
 
-## WordPress support, development and website
+No during capture. Checkout data is stored in the site’s own database. WhatsApp, email and Google Maps open only when an administrator intentionally clicks a recovery action.
 
-For WordPress development, security recovery, migration, performance and related services, visit **[devjoynal.com](https://devjoynal.com)**. Read the dedicated [WooCommerce incomplete orders tracker page](https://devjoynal.com/incomplete-orders-tracker.html) for a user-friendly overview and download path. Bugs and feature suggestions can be submitted through the repository's [Issues](https://github.com/joynalabddin/incomplete-orders-tracker/issues) page.
+### Does it work with WooCommerce Block Checkout?
+
+The plugin includes Classic Checkout and Block Checkout hooks. A staging test is still recommended because checkout extensions and payment gateways can customize field rendering and order timing.
+
+### Why is an order-created record not immediately marked converted?
+
+Creating a WooCommerce order and completing payment are not always the same event. Keeping those states separate makes the recovery dashboard more accurate for pending or failed payments.
+
+### How do I report a security issue?
+
+Please avoid posting exploitable details in a public issue. Follow the guidance in [SECURITY.md](SECURITY.md) and contact Joynal Abdin through [devjoynal.com](https://devjoynal.com).
+
+## Development
+
+The plugin source is in [`incomplete-orders-tracker/`](incomplete-orders-tracker/). Before a release, run PHP lint, JavaScript syntax checks, the smoke test, legacy-reference scans and a WordPress/WooCommerce staging test. The GitHub Actions workflow packages the plugin and publishes a Release asset when the version is newer than the latest tag.
+
+## Support and website
+
+For WordPress development, WooCommerce recovery workflows, security hardening, migration and performance work, visit **[devjoynal.com](https://devjoynal.com)**. Bugs, questions and feature suggestions belong in the repository’s [Issues](https://github.com/joynalabddin/incomplete-orders-tracker/issues) area.
 
 ## License
 
-This project is released under the GPLv2 or later. It is free software and does not require a license key or activation key to run.
+This project is released under the [GPLv2 or later](LICENSE). It is free software and does not require a license key or activation key.
 
 ## Author
 
