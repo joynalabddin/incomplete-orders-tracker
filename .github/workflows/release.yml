@@ -1,0 +1,76 @@
+name: Build and publish plugin release
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'incomplete-orders-tracker/**'
+      - '.github/workflows/release.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Package and publish release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Read plugin version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=$(sed -n 's/^ \* Version:[[:space:]]*//p' incomplete-orders-tracker/incomplete-orders-tracker.php | head -n 1)
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid plugin version: $version" >&2
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
+
+      - name: Validate source
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -l incomplete-orders-tracker/incomplete-orders-tracker.php
+          node --check incomplete-orders-tracker/iot-checkout.js
+          node --check incomplete-orders-tracker/assets/iot-admin.js
+          if grep -RniE 'borbila|IOT_BORBILA|IOT_License|iot_borbila|wp_remote_|activate_license|license_page|iot_license|MASTER_|API_BASE_URL' incomplete-orders-tracker --include='*.php' --include='*.js' --include='*.css'; then
+            echo 'Old vendor or remote license code detected.' >&2
+            exit 1
+          fi
+
+      - name: Create release package
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf package
+          mkdir -p package/incomplete-orders-tracker
+          cp -a incomplete-orders-tracker/. package/incomplete-orders-tracker/
+          rm -f package/incomplete-orders-tracker/.DS_Store
+          find package -name '__MACOSX' -type d -prune -exec rm -rf {} +
+          cd package
+          zip -qr ../incomplete-orders-tracker.zip incomplete-orders-tracker
+          cd ..
+          sha256sum incomplete-orders-tracker.zip > incomplete-orders-tracker.zip.sha256
+
+      - name: Publish or update GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: v${{ steps.version.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" incomplete-orders-tracker.zip incomplete-orders-tracker.zip.sha256 --clobber
+          else
+            gh release create "$TAG" incomplete-orders-tracker.zip incomplete-orders-tracker.zip.sha256 \
+              --title "Incomplete Orders Tracker $TAG" \
+              --generate-notes \
+              --target "$GITHUB_SHA"
+          fi
