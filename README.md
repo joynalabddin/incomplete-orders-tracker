@@ -1,12 +1,12 @@
-# Incomplete Orders Tracker
+# Incomplete Order Tracker Plugin for WooCommerce
 
 <p align="center">
   <img src="incomplete-orders-tracker/assets/joynal-abdin-author.jpg" alt="Joynal Abdin — DevJoynal" width="128" />
 </p>
 
 <p align="center">
-  <strong>A free, self-hosted WooCommerce checkout recovery plugin for WordPress.</strong><br />
-  Capture incomplete checkout details locally, review product intent, and follow up from one focused admin dashboard.
+  <strong>Incomplete Order Tracker Plugin for WooCommerce — free and self-hosted.</strong><br />
+  Capture incomplete checkout details locally, review product intent, and follow up from one focused WordPress dashboard.
 </p>
 
 <p align="center">
@@ -18,16 +18,16 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/joynalabddin/incomplete-orders-tracker/releases/latest">Download the plugin</a> ·
+  <a href="https://github.com/joynalabddin/incomplete-orders-tracker/releases/latest">Download the Incomplete Order Tracker Plugin</a> ·
   <a href="https://devjoynal.com/">Visit DevJoynal</a> ·
   <a href="https://github.com/joynalabddin/incomplete-orders-tracker/issues">Ask for help</a>
 </p>
 
 ## Overview
 
-**Incomplete Orders Tracker** helps WooCommerce store owners recover checkout sessions that did not become orders. When a visitor starts entering checkout information and leaves, the plugin saves the available checkout context in the store’s own WordPress database. Administrators can then review the record, see the intended product, and choose a WhatsApp or email follow-up.
+**Incomplete Orders Tracker** is a free WooCommerce incomplete order tracker plugin for WordPress. It helps store owners recover checkout sessions that did not become orders. When a visitor starts entering checkout information and leaves, the plugin saves the available checkout context in the store’s own WordPress database. Administrators can then review the record, see the intended product, and choose a WhatsApp or email follow-up.
 
-It is designed for stores that want a small, self-hosted workflow instead of a separate SaaS dashboard. The plugin is free for everyone, does not require a license key or account, and has no paid activation system.
+It is designed for stores that want a small, self-hosted workflow instead of a separate SaaS dashboard. The plugin is free for everyone, does not require a license key or account, and has no paid activation system. For a longer explanation, see the [Incomplete Order Tracker Plugin guide](docs/incomplete-order-tracker-plugin.md).
 
 ## What it provides
 
@@ -120,9 +120,13 @@ Before production rollout, test the plugin on a staging site with the store’s 
 
 ## Common questions
 
+### Is the Incomplete Order Tracker Plugin free?
+
+Yes. It is free for everyone and has no license key, activation key, paid plan or remote license server. WordPress’s normal plugin activation is still required to load the plugin, as with every WordPress plugin.
+
 ### Does the plugin require a license key?
 
-No. It is free for everyone and has no license key, activation key, paid plan or remote license server. WordPress’s normal plugin activation is still required to load the plugin, as with every WordPress plugin.
+No. There is no license system at all. The plugin is free for everyone; WordPress’s normal plugin activation is only required to load the plugin.
 
 ### Does it send customer data to an external service?
 
